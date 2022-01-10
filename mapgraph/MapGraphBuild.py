@@ -11,7 +11,7 @@ def main():
     packets = rdpcap(filename)
     packets = filterpackets(name,packets)
     d,nodes = build(eps,packets)
-    with open("youtube.txt",'w') as f:
+    with open("instagram.txt",'w') as f:
         for i in d:
             f.write(f"{str(i[0]).replace(' ','')} {str(i[1]).replace(' ','')} {d[i]}\n")
     
