@@ -36,9 +36,9 @@ with open("graph.txt",'w') as f:
   for chain in chains:
       for i in range(len(chain)-1):
           if len(chain) > 1:
-              f.write(str(chain[i][1]).replace(" ","")+" "+str(chain[i+1][1]).replace(" ","")+" 1\n")
+              f.write(str(chain[i]).replace(" ","")+" "+str(chain[i+1]).replace(" ","")+" 1\n")
           else:
-              f.write(str(chain[i][1]).replace(" ","")+str(chain[i][1]).replace(" ","")+" 1\n")
+              f.write(str(chain[i]).replace(" ","")+str(chain[i]).replace(" ","")+" 1\n")
 
 
     
