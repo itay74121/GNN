@@ -16,7 +16,7 @@ def create_graph(filename):
             pass
     return V
     
-    vectors = create_graph("./data/graph2.pcap")
+vectors = create_graph("./data/graph2.pcap")
 
 eps = 0.001
 chains = []
