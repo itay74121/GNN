@@ -1,0 +1,5 @@
+*.txt
+*.pcap
+.idea
+.vscode
+__pycache__

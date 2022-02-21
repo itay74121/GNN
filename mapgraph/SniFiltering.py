@@ -17,15 +17,26 @@ def getsni(packets):
 
 def filterpackets(name,packets):
     snilist = set(getsni(packets))
-    l = list(filter(lambda x: name in x[0],snilist))
-    print(l)
+    if type(name) is list:
+        l= []
+        for n in name:
+            for sni in snilist:
+                if n in sni[0]:
+                    l.append(sni)
+        l = list(set(l))
+
+    else:
+        l = []
+        for sni in snilist:
+            if name in sni[0]:
+                l.append(sni)
     packs= []
     for ip in l:
         print(ip,len(packs))
         for p in packets:
             try:
                 iph = p[IP]
-                if ip[1] in(iph.src,iph.dst):
+                if ip[1] in(iph.dst):
                     packs.append(p)
             except:
                 pass
