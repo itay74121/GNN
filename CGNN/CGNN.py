@@ -1,9 +1,16 @@
+import keras
+import numpy
+import scapy.plist
+import tensorflow
 from scapy.all import *
+import networkx as nx
 import numpy as np
+import scipy.sparse as sp
 from scapy.layers.inet import TCP, Ether, IP, UDP
 from scapy.layers.dns import DNS
 import tensorflow as tf
 import tensorflow.keras as tfk
+from scipy.linalg import fractional_matrix_power
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -132,7 +139,7 @@ def getTrainTestGraphs():
     df = pd.read_csv("data/w_hi_chrome/id.csv")
     train_name, test_name, train_label, test_label = train_test_split(df["fname"],
                                                                       df["label"],
-                                                                      test_size=0.20,
+                                                                      test_size=0.98,
                                                                       random_state=42)
     GraphsForTrain = []
     GraphsForTest = []
@@ -146,12 +153,17 @@ def getTrainTestGraphs():
     for i in train_label:
         LableForTrain.append(int(i))
 
+    counter = 0
     for name in df["fname"]:
         if name not in train_name:
             g = createGraphFromSession(name)
-            GraphsForTest.append(g)
 
-    return GraphsForTrain, list(LableForTrain), GraphsForTest, list(test_label)  # the graphs is SX
+            counter += 1
+            GraphsForTest.append(np.ndarray.tolist(g))
+            if counter == 10:
+                break
+
+    return GraphsForTrain, list(LableForTrain), GraphsForTest, list(test_label[:10])  # the graphs is SX
 
 
 GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
@@ -174,6 +186,7 @@ for item in set(LabelsForTrain):
     dict_label[item] = counter
     counter += 1
 
+dict_label[18102.0] = 5  # remove this when i will train on big data!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 list_of_lables = []
 for item in LabelsForTrain:
@@ -183,19 +196,32 @@ for item in LabelsForTrain:
 
 label_graph_to_train = tf.convert_to_tensor(list_of_lables)
 callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
-m.fit(graph_to_train, np.reshape(label_graph_to_train, (2604, 1, 6)), epochs=400, callbacks=[callback], batch_size=32)
+m.fit(graph_to_train, np.reshape(label_graph_to_train, (65, 1, 6)), epochs=400, callbacks=[callback], batch_size=32)
 
 list_of_lables_test = []
-for item in LabelsForTest:
+for item in LabelsForTest[:10]:
     list_temp = [0] * 6
     list_temp[dict_label[item]] = 1
 
     list_of_lables_test.append(list_temp)
-for g in GraphsForTest:
+max_n_Test=max([len(i) for i in GraphsForTest])
+for g in GraphsForTest[:10]:
     zeros = [0] * 1500
-    for i in range(max_n - len(g)):
-        np.append(g, zeros)
-graph_to_test = tf.convert_to_tensor(GraphsForTrain, tf.float32)
+    for i in range(max_n_Test - len(g)):
+        g.append(zeros)
+graph_to_test = tf.convert_to_tensor(GraphsForTest[:10], tf.float32)
 graph_to_test = tf.cast(graph_to_test, tf.float32)
 
-m.evaluate(graph_to_test, np.reshape(list_of_lables_test, (651, 1, 6)))
+m.evaluate(graph_to_test, np.reshape(list_of_lables_test[:10], (10, 1, 6)))
+
+a = np.array(m.predict(graph_to_test))
+idx = np.argmax(a, axis=-1)
+idx = idx.flatten()
+b = np.array(np.reshape(list_of_lables_test[:10], (10, 1, 6)))
+_idx = np.argmax(b, axis=-1)
+_idx = _idx.flatten()
+
+
+result = tf.math.confusion_matrix(labels=_idx, predictions=idx, num_classes=6) #use one hot to convert to 1D to do confMatrix
+
+print(result)
