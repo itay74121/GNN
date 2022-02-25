@@ -69,7 +69,6 @@ def normalize_D_t(D_t):
     return D_t
 
 
-
 def getSX(session):
     X = np.array(session)
     A = calculate_A(session)
@@ -153,9 +152,11 @@ def getTrainTestGraphs():
     for i in train_label:
         LableForTrain.append(int(i))
 
+    listOfLabelsForTest = []
     counter = 0
     for name in df["fname"]:
         if name not in train_name:
+            listOfLabelsForTest.append(df[df["fname"] == name]["label"])
             g = createGraphFromSession(name)
 
             counter += 1
@@ -163,13 +164,13 @@ def getTrainTestGraphs():
             if counter == 10:
                 break
 
-    return GraphsForTrain, list(LableForTrain), GraphsForTest, list(test_label[:10])  # the graphs is SX
+    return GraphsForTrain, list(LableForTrain), GraphsForTest, listOfLabelsForTest  # the graphs is SX
 
 
 GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
 m = cgnn_model()
 m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
-          loss='categorical_crossentropy',metrics=['acc'])
+          loss='categorical_crossentropy', metrics=['acc'])
 
 max_n = max([len(i) for i in GraphsForTrain])
 for g in GraphsForTrain:
@@ -201,10 +202,10 @@ m.fit(graph_to_train, np.reshape(label_graph_to_train, (65, 1, 6)), epochs=400, 
 list_of_lables_test = []
 for item in LabelsForTest[:10]:
     list_temp = [0] * 6
-    list_temp[dict_label[item]] = 1
+    list_temp[dict_label[np.int(item.values)]] = 1
 
     list_of_lables_test.append(list_temp)
-max_n_Test=max([len(i) for i in GraphsForTest])
+max_n_Test = max([len(i) for i in GraphsForTest])
 for g in GraphsForTest[:10]:
     zeros = [0] * 1500
     for i in range(max_n_Test - len(g)):
@@ -221,7 +222,7 @@ b = np.array(np.reshape(list_of_lables_test[:10], (10, 1, 6)))
 _idx = np.argmax(b, axis=-1)
 _idx = _idx.flatten()
 
-
-result = tf.math.confusion_matrix(labels=_idx, predictions=idx, num_classes=6) #use one hot to convert to 1D to do confMatrix
+result = tf.math.confusion_matrix(labels=_idx, predictions=idx,
+                                  num_classes=6)  # use one hot to convert to 1D to do confMatrix
 
 print(result)
