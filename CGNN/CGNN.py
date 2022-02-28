@@ -1,16 +1,9 @@
-import keras
-import numpy
-import scapy.plist
-import tensorflow
 from scapy.all import *
-import networkx as nx
 import numpy as np
-import scipy.sparse as sp
 from scapy.layers.inet import TCP, Ether, IP, UDP
 from scapy.layers.dns import DNS
 import tensorflow as tf
 import tensorflow.keras as tfk
-from scipy.linalg import fractional_matrix_power
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -69,16 +62,39 @@ def normalize_D_t(D_t):
     return D_t
 
 
+def getS(n):
+    if n == 1:
+        return np.array(0)
+    if n == 2:
+        return np.array((0, 1), (1, 0))
+    S = [[0 for x in range(n)] for y in range(n)]
+    S[0][0], S[n - 1][n - 1] = 0.50000, 0.50000
+    S[0][1], S[1][0], S[n - 2][n - 1], S[n - 1][n - 2] = 0.40825, 0.40825, 0.40825, 0.40825
+    S[1][1], S[1][2], S[n - 2][n - 2], S[n - 2][n - 3] = 0.33333, 0.33333, 0.33333, 0.33333
+    for i in range(2, len(S) - 2):
+        for j in range(i - 1, i + 2):
+            S[i][j] = 0.33333
+    return np.asarray(S)
+
+
 def getSX(session):
     X = np.array(session)
-    A = calculate_A(session)
-    I = np.identity(len(A[0]))
-    A_t = sum_matrices(A, I)
-    D_t = np.array(get_diagonal_degree(A_t))
-    D_t = normalize_D_t(D_t)
-    S_temp = np.dot(D_t, A_t)
-    S = np.dot(S_temp, D_t)
+    S = getS(len(session))
     SX = np.dot(S, X)
+    del S, X
+    # X = np.array(session)
+    # A = calculate_A(session)
+    # I = np.identity(len(A[0]))
+    # A_t = sum_matrices(A, I)
+    # del I, A
+    # D_t = np.array(get_diagonal_degree(A_t))
+    # D_t = normalize_D_t(D_t)
+    # S_temp = np.dot(D_t, A_t)
+    # del A_t
+    # S = np.dot(S_temp, D_t)
+    # del D_t, S_temp
+    # SX = np.dot(S, X)
+    # del S, X
     return np.asarray(SX)
 
 
@@ -104,11 +120,17 @@ def calculate_A(session):
 def createGraphFromSession(pcapName):
     file = rdpcap("data/w_hi_chrome/" + pcapName)
     l = []
+    counter = 0
     for p in file:
+        if counter == 500:
+            break
+        counter += 1
         packet_proc = preprocessing(p)
         if packet_proc:
             if complete(packet_proc):
                 l.append(complete(packet_proc))
+        # if len(l) < 4:
+        #   return None
     return getSX(l)
 
 
@@ -138,14 +160,16 @@ def getTrainTestGraphs():
     df = pd.read_csv("data/w_hi_chrome/id.csv")
     train_name, test_name, train_label, test_label = train_test_split(df["fname"],
                                                                       df["label"],
-                                                                      test_size=0.98,
+                                                                      test_size=0.20,
                                                                       random_state=42)
     GraphsForTrain = []
     GraphsForTest = []
-
+    counter = 0
     for i in train_name:
+        print(counter)
         g = createGraphFromSession(i)
-
+        counter += 1
+        # if g:
         GraphsForTrain.append(np.ndarray.tolist(g))
 
     LableForTrain = []
@@ -153,18 +177,14 @@ def getTrainTestGraphs():
         LableForTrain.append(int(i))
 
     listOfLabelsForTest = []
-    counter = 0
-    for name in df["fname"]:
-        if name not in train_name:
-            listOfLabelsForTest.append(df[df["fname"] == name]["label"])
-            g = createGraphFromSession(name)
+    for name in test_name:
+        g = createGraphFromSession(name)
+        # if g:
+        GraphsForTest.append(np.ndarray.tolist(g))
+    for i in test_label:
+        listOfLabelsForTest.append(int(i))
 
-            counter += 1
-            GraphsForTest.append(np.ndarray.tolist(g))
-            if counter == 10:
-                break
-
-    return GraphsForTrain, list(LableForTrain), GraphsForTest, listOfLabelsForTest  # the graphs is SX
+    return GraphsForTrain, list(LableForTrain), GraphsForTest, list(listOfLabelsForTest)  # the graphs is SX
 
 
 GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
@@ -187,8 +207,6 @@ for item in set(LabelsForTrain):
     dict_label[item] = counter
     counter += 1
 
-dict_label[18102.0] = 5  # remove this when i will train on big data!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 list_of_lables = []
 for item in LabelsForTrain:
     list_temp = [0] * 6
@@ -197,28 +215,27 @@ for item in LabelsForTrain:
 
 label_graph_to_train = tf.convert_to_tensor(list_of_lables)
 callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
-m.fit(graph_to_train, np.reshape(label_graph_to_train, (65, 1, 6)), epochs=400, callbacks=[callback], batch_size=32)
+m.fit(graph_to_train, np.reshape(label_graph_to_train, (2603, 1, 6)), epochs=400, callbacks=[callback], batch_size=32)
 
 list_of_lables_test = []
-for item in LabelsForTest[:10]:
+for item in LabelsForTest:
     list_temp = [0] * 6
-    list_temp[dict_label[np.int(item.values)]] = 1
-
+    list_temp[dict_label[item]] = 1
     list_of_lables_test.append(list_temp)
 max_n_Test = max([len(i) for i in GraphsForTest])
-for g in GraphsForTest[:10]:
+for g in GraphsForTest:
     zeros = [0] * 1500
     for i in range(max_n_Test - len(g)):
         g.append(zeros)
-graph_to_test = tf.convert_to_tensor(GraphsForTest[:10], tf.float32)
+graph_to_test = tf.convert_to_tensor(GraphsForTest, tf.float32)
 graph_to_test = tf.cast(graph_to_test, tf.float32)
 
-m.evaluate(graph_to_test, np.reshape(list_of_lables_test[:10], (10, 1, 6)))
+m.evaluate(graph_to_test, np.reshape(list_of_lables_test, (651, 1, 6)))
 
 a = np.array(m.predict(graph_to_test))
 idx = np.argmax(a, axis=-1)
 idx = idx.flatten()
-b = np.array(np.reshape(list_of_lables_test[:10], (10, 1, 6)))
+b = np.array(np.reshape(list_of_lables_test, (651, 1, 6)))
 _idx = np.argmax(b, axis=-1)
 _idx = _idx.flatten()
 
