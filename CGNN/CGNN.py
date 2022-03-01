@@ -6,6 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as tfk
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import keras.backend as K
 
 
 class SgcLayer(tfk.layers.Layer):
@@ -189,8 +190,56 @@ def getTrainTestGraphs():
 
 GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
 m = cgnn_model()
+def f1(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    recall = true_positives / (possible_positives + K.epsilon())
+    f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
+    return f1_val
+
+
+def precision(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    recall = true_positives / (possible_positives + K.epsilon())
+    f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
+    return precision
+
+
+def recall(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    recall = true_positives / (possible_positives + K.epsilon())
+    f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
+    return recall
+
+
+def TP(y_true, y_pred):
+    tp = tf.math.count_nonzero(y_pred * y_true)
+    return tp
+
+
+def TN(y_true, y_pred):
+    tn = tf.math.count_nonzero((y_pred - 1) * (y_true - 1))
+    return tn
+
+
+def FP(y_true, y_pred):
+    fp = tf.math.count_nonzero(y_pred * (y_true - 1))
+    return fp
+
+
+def FN(y_true, y_pred):
+    fn = tf.math.count_nonzero((y_pred - 1) * y_true)
+    return fn
 m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
-          loss='categorical_crossentropy', metrics=['acc'])
+          loss='categorical_crossentropy', metrics=['acc', f1, precision, recall, TP, TN, FP, FN])
 
 max_n = max([len(i) for i in GraphsForTrain])
 for g in GraphsForTrain:
