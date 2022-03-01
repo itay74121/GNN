@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 import keras.backend as K
 
 
+
 class SgcLayer(tfk.layers.Layer):
     def __init__(self, outputsNumber):
         super(SgcLayer, self).__init__()
@@ -180,6 +181,7 @@ def getTrainTestGraphs():
     listOfLabelsForTest = []
     for name in test_name:
         g = createGraphFromSession(name)
+        print(name)
         # if g:
         GraphsForTest.append(np.ndarray.tolist(g))
     for i in test_label:
@@ -190,6 +192,7 @@ def getTrainTestGraphs():
 
 GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
 m = cgnn_model()
+
 def f1(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
@@ -238,7 +241,9 @@ def FP(y_true, y_pred):
 def FN(y_true, y_pred):
     fn = tf.math.count_nonzero((y_pred - 1) * y_true)
     return fn
-m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+
+
+m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
           loss='categorical_crossentropy', metrics=['acc', f1, precision, recall, TP, TN, FP, FN])
 
 max_n = max([len(i) for i in GraphsForTrain])
