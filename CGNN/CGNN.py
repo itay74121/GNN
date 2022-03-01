@@ -243,7 +243,7 @@ def FN(y_true, y_pred):
     return fn
 
 
-m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
           loss='categorical_crossentropy', metrics=['acc', f1, precision, recall, TP, TN, FP, FN])
 
 max_n = max([len(i) for i in GraphsForTrain])
