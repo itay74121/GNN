@@ -3,7 +3,7 @@ load_layer("tls")
 
 MYPC = "192.168.1.61"
 
-def build(time,packets):
+def build(time,packets,srcs):
     t1 = packets[0].time + time
     section = set()
     d = {}
@@ -11,16 +11,27 @@ def build(time,packets):
     for packet in packets:
         if packet.time < t1:
             try:
-                if TCP in packet:
-                    if MYPC != packet[IP].dst:
-                        section.add((packet[IP].dst,packet[TCP].dport))
-                    elif MYPC == packet[IP].dst:
-                        section.add((packet[IP].src,packet[TCP].sport))
-                elif UDP in packet:
-                    if MYPC != packet[IP].dst:
-                        section.add((packet[IP].dst,packet[UDP].dport))
-                    elif MYPC == packet[IP].dst:
-                        section.add((packet[IP].src,packet[UDP].sport))
+                if packet[IP].src in srcs and packet[IP].dst not in srcs:
+                    if TCP in packet:
+                        section.add((packet[IP].dst, packet[TCP].dport))
+                    elif UDP in packet:
+                        section.add((packet[IP].dst, packet[UDP].dport))
+                elif packet[IP].src not in srcs and packet[IP].dst in srcs:
+                    if TCP in packet:
+                        section.add((packet[IP].src, packet[TCP].sport))
+                    elif UDP in packet:
+                        section.add((packet[IP].src, packet[UDP].sport))
+
+                # if TCP in packet:
+                #     if packet[IP].dst not in srcs: # destenation is not mypc
+                #         section.add((packet[IP].dst,packet[TCP].dport))
+                #     elif packet[IP].dst in srcs: # destenation is my pc
+                #         section.add((packet[IP].src,packet[TCP].sport))
+                # elif UDP in packet:
+                #     if packet[IP].dst not in srcs:
+                #         section.add((packet[IP].dst,packet[UDP].dport))
+                #     elif packet[IP].dst in srcs:
+                #         section.add((packet[IP].src,packet[UDP].sport))
             except:
                 pass
         else:
@@ -37,16 +48,16 @@ def build(time,packets):
                         d[(ni,nj)] = 1     
             nodes = set.union(nodes,section)
             section = set()
-            if TCP in packet:
-                if MYPC != packet[IP].dst:
-                    section.add((packet[IP].dst,packet[TCP].dport))
-                elif MYPC == packet[IP].dst:
-                    section.add((packet[IP].src,packet[TCP].sport))
-            elif UDP in packet:
-                if MYPC != packet[IP].dst:
-                    section.add((packet[IP].dst,packet[UDP].dport))
-                elif MYPC == packet[IP].dst:
-                    section.add((packet[IP].src,packet[UDP].sport))
+            if packet[IP].src in srcs and packet[IP].dst not in srcs:
+                if TCP in packet:
+                    section.add((packet[IP].dst, packet[TCP].dport))
+                elif UDP in packet:
+                    section.add((packet[IP].dst, packet[UDP].dport))
+            elif packet[IP].src not in srcs and packet[IP].dst in srcs:
+                if TCP in packet:
+                    section.add((packet[IP].src, packet[TCP].sport))
+                elif UDP in packet:
+                    section.add((packet[IP].src, packet[UDP].sport))
             t1 = packet.time + time
     l = list(section)
     for i in range(len(l)):

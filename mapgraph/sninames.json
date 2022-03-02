@@ -2,5 +2,44 @@
   "amazon": [
     "amazon",
     "cloudfront"
+  ],
+  "twitter": [
+    "twitter",
+    "twimg",
+    "t.co"
+  ],
+  "facebook": [
+    "facebook",
+    "fbcdn"
+  ],
+  "google": [
+    "google",
+    "gstatic"
+  ],
+  "instagram":[
+    "instagram",
+    "fbcdn",
+    "edge-chat",
+    "cdninstagram",
+    "connect"
+  ],
+  "wikipedia": [
+    "wikipedia",
+    "wmflabs",
+    "pageviews",
+    "wiki"
+  ],
+  "yahoo":[
+    "yahoo",
+    "yimg",
+    "ycloud"
+  ],
+  "youtube": [
+    "youtube",
+    "googlevideo",
+    "googlesyndication",
+    "g.doubleclick",
+    "googleusercontent",
+    "ytimg"
   ]
 }
