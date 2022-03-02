@@ -124,7 +124,7 @@ def createGraphFromSession(pcapName):
     l = []
     counter = 0
     for p in file:
-        if counter == 500:
+        if counter == 700:
             break
         counter += 1
         packet_proc = preprocessing(p)
