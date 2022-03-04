@@ -9,7 +9,7 @@ import pandas as pd
 from os import path
 from statsmodels import robust
 from scipy.stats import skew,kurtosis,scoreatpercentile
-from random import choice
+from random import choice,choices,randint
 from sklearn.model_selection import train_test_split
 
 
@@ -238,6 +238,30 @@ def split(data,p,d):
 
 
 
+def split_classes(x,y,classratio):
+    y = [tuple(i) for i in y]
+    train_x, train_y, test_x, test_y = [],[],[],[]
+    n = x.shape[0]
+    c = {}
+    for i in classratio:
+        c[i] = []
+    for i in range(n):
+        c[y[i]].append(x[i])
+    for i in c:
+        data = c[i] # test to be
+        chosen= []
+        for b in range(int(len(data)*classratio[i])):
+            j=randint(0,len(data)-1)
+            chosen.append(data[j])
+            data.pop(j)
+        train_x.extend(chosen)
+        train_y.extend([list(i)]*len(chosen))
+        test_x.extend(data)
+        test_y.extend([list(i)]*len(data))
+    return train_x,test_x,train_y,test_y
+
+
+
 def main():
     # files = glob("./dataset/*.pcap")
     # d = {}
@@ -356,6 +380,7 @@ def main():
 
     files = glob("./dataset/*.npy")
     classes = list(set([i[10] for i in files]))
+    classes.sort()
     y = []
     data = []
     for file in files:
@@ -373,7 +398,7 @@ def main():
             if t>0:
                 D[i][i] = 1/t
 
-    data_train, data_test, labels_train, labels_test = train_test_split(data,y,test_size=0.75)
+    data_train, data_test, labels_train, labels_test = split_classes(data,y,{(1,0,0):0.75,(0,1,0):0.55,(0,0,1):0.143})   #train_test_split(data,y,stratify=y,test_size=0.1)
     print([sum([i[j] for i in labels_train]) / len(labels_train) for j in range(3)])
     data_train = tf.constant(data_train)
     labels_train = tf.constant(labels_train)
@@ -390,9 +415,9 @@ def main():
     # val_y = np.load("val_y.npy")
     #
     model = MAPModel(len(classes),5)
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-7), loss=tf.keras.losses.MeanSquaredError(),metrics = ['accuracy',"categorical_accuracy"])
-    model.fit(x=data_train,y=labels_train,batch_size=1,epochs=200,class_weight=d)
-    results = model.evaluate(x=data_test,y= labels_test, verbose=True)
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1.e-5), loss=tf.keras.losses.MeanSquaredError(),metrics = ['accuracy',"categorical_accuracy"])
+    model.fit(x=data_train,y=labels_train,batch_size=1,epochs=8,class_weight=d)
+    results = model.evaluate(x=data_test,y= labels_test, verbose=1)
     print(results)
 
 if __name__ == "__main__":
