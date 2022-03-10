@@ -283,14 +283,14 @@ def hardmax(input):
     return r
 
 def main():
-    # files = glob("./dataset/*.pcap")
-    # d = {}
-    # for file in files:
-    #     pre = file.split(".pcap")[0]
-    #     if pre not in d:
-    #         d[pre] = [file]
-    #     else:
-    #         d[pre].append(file)
+    files = glob("./FS raw/*/*.pcap")
+    d = {}
+    for file in files:
+        pre = file.split(".pcap")[0]
+        if pre not in d:
+            d[pre] = [file]
+        else:
+            d[pre].append(file)
     # c = 1
     # for pre in d:
     #     print(c,pre,len(d[pre]))
@@ -335,47 +335,53 @@ def main():
     #     dump(tojson,f)
 
 
-    #
-    # keys = [i for i in d]
+
+    keys = [i for i in d]
     # traindata,test = split(keys,0.25,d)
     # classes = list(set([i.split("\\")[1][0].lower() for i in traindata]))
     # data= []
     # ans = []
-    # c= 1
-    # for pre in d:
-    #     print(c)
-    #     c+=1
-    #     print("started",pre)
-    #     packets = []
-    #     srcs = set([h.replace("-",'.') for h in [[j for j in i.split("_") if j.count("-") == 3][0] for i in d[pre]]])
-    #     for file in d[pre]:
-    #         print("read",file)
-    #         ps = rdpcap(file)
-    #         for t in ps:
-    #             packets.append(t)
-    #         del ps
-    #     packets.sort(key=lambda x: x[0].time < x[1].time)
-    #     edges,nodes = build(3,packets,srcs)
-    #     A = getmatrix(list(nodes),edges)
-    #     D = getdegree(A)
-    #     X = []
-    #     for n in nodes:
-    #         X.append(extract_features(n[0],packets))
-    #         print("done feature",n)
-    #     X = np.array(X)
-    #     t = tf.ragged.stack([D, A, X]).to_tensor().numpy()
-    #     np.save(pre,t)
-    #     # letter = pre.split("\\")[1][0].lower()
-    #     # t = []
-    #     # for i in classes:
-    #     #     if i == letter:
-    #     #         t.append(1)
-    #     #     else:
-    #     #         t.append(0)
-    #     # data.append(tf.ragged.stack([D,A,X]).to_tensor())
-    #     # ans.append(t)
-    #
-    #     del packets,edges,nodes,A,D,X
+    c= 1
+    for i in keys:
+        if "d_hi_chrome" in i or "d_hi_safari" in i or "l_hi_chrome" in i:
+            del d[i]
+    for pre in d:
+        print(c)
+        c+=1
+        print("started",pre)
+        packets = []
+        srcs = set([h.replace("-",'.') for h in [[j for j in i.split("_") if j.count("-") == 3][0] for i in d[pre]]])
+        for file in d[pre]:
+            print("read",file)
+            try:
+                ps = rdpcap(file)
+            except:
+                continue
+            for t in ps:
+                packets.append(t)
+            del ps
+        packets.sort(key=lambda x: x[0].time < x[1].time)
+        edges,nodes = build(3,packets,srcs)
+        A = getmatrix(list(nodes),edges)
+        D = getdegree(A)
+        X = []
+        for n in nodes:
+            X.append(extract_features(n[0],packets))
+            print("done feature",n)
+        X = np.array(X)
+        t = tf.ragged.stack([D, A, X]).to_tensor().numpy()
+        np.save(pre,t)
+        # letter = pre.split("\\")[1][0].lower()
+        # t = []
+        # for i in classes:
+        #     if i == letter:
+        #         t.append(1)
+        #     else:
+        #         t.append(0)
+        # data.append(tf.ragged.stack([D,A,X]).to_tensor())
+        # ans.append(t)
+
+        del packets,edges,nodes,A,D,X
     #
     #
     # data = tf.ragged.stack(data).to_tensor()
@@ -398,61 +404,61 @@ def main():
     # np.save("ans",ans.numpy())
 
 
-    files = glob("./dataset/*.npy")
-    classes = [0,1]
-    y = []
-    data = []
-    for file in files:
-        data.append(np.load(file))
-        v = [0]*len(classes)
-        if 'p.npy' in file:
-            v[1] = 1
-        else:
-            v[0] = 1
-        y.append(v)
+    # files = glob("./dataset/*.npy")
+    # classes = [0,1]
+    # y = []
+    # data = []
+    # for file in files:
+    #     data.append(np.load(file))
+    #     v = [0]*len(classes)
+    #     if 'p.npy' in file:
+    #         v[1] = 1
+    #     else:
+    #         v[0] = 1
+    #     y.append(v)
+    #
+    #
+    # data = tf.ragged.constant(data).to_tensor().numpy()
+    # for row in data:
+    #     D = row[0]
+    #     for i in range(D.shape[0]):
+    #         t = D[i][i]
+    #         if t>0:
+    #             D[i][i] = 1/t
 
+    # data_train, data_test, labels_train, labels_test = split_classes(data,y,{(1,0):0.2,(0,1):0.1})   #train_test_split(data,y,stratify=y,test_size=0.1)
+    # print([sum([i[j] for i in labels_train]) / len(labels_train) for j in range(2)])
+    # data_train = tf.constant(data_train)
+    # labels_train = tf.constant(labels_train)
+    #
+    # data_test = tf.constant(data_test)
+    # labels_test = tf.constant(labels_test)
 
-    data = tf.ragged.constant(data).to_tensor().numpy()
-    for row in data:
-        D = row[0]
-        for i in range(D.shape[0]):
-            t = D[i][i]
-            if t>0:
-                D[i][i] = 1/t
-
-    data_train, data_test, labels_train, labels_test = split_classes(data,y,{(1,0):0.2,(0,1):0.1})   #train_test_split(data,y,stratify=y,test_size=0.1)
-    print([sum([i[j] for i in labels_train]) / len(labels_train) for j in range(2)])
-    data_train = tf.constant(data_train)
-    labels_train = tf.constant(labels_train)
-
-    data_test = tf.constant(data_test)
-    labels_test = tf.constant(labels_test)
-
-    t = [sum([i[j] for i in y])/len(y) for j in range(2)]
-    d = {0:t[0],1:t[1]}
+    # t = [sum([i[j] for i in y])/len(y) for j in range(2)]
+    # d = {0:t[0],1:t[1]}
 
     # traindataset =  np.load("train_x.npy")
     # trainans = np.load("train_y.npy")
     # val_x = np.reshape(np.load("val_x.npy"),[1,3,28,64])
     # val_y = np.load("val_y.npy")
     #
-    model = MAPModel(len(classes),5)
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1.e-5), loss=tf.keras.losses.MeanSquaredError(),metrics = ['accuracy',"categorical_accuracy"])
-    model.fit(x=data_train,y=labels_train,batch_size=1,epochs=4,class_weight=d)
-    # model.save("mymodel")
-    # model = tf.keras.models.load_model("mymodel")
-    predictions = []
-    for i in range(data_test.shape[0]):
-        predictions.append(hardmax(model.predict(tf.stack([data_test[i]]))[0]))
-    y_true = labels_test.numpy().argmax(axis=1)
-    y_pred = np.array(predictions).argmax(axis=1)
-    cm = confusion_matrix(y_true,y_pred)
-    print(cm)
-    print("Recall",recall_score(y_true,y_pred))
-    print("f1",f1_score(y_true, y_pred))
-    d = ConfusionMatrixDisplay(cm)
-    d.plot()
-    plt.show()
+    # model = MAPModel(len(classes),5)
+    # model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1.e-5), loss=tf.keras.losses.MeanSquaredError(),metrics = ['accuracy',"categorical_accuracy"])
+    # model.fit(x=data_train,y=labels_train,batch_size=1,epochs=4,class_weight=d)
+    # # model.save("mymodel")
+    # # model = tf.keras.models.load_model("mymodel")
+    # predictions = []
+    # for i in range(data_test.shape[0]):
+    #     predictions.append(hardmax(model.predict(tf.stack([data_test[i]]))[0]))
+    # y_true = labels_test.numpy().argmax(axis=1)
+    # y_pred = np.array(predictions).argmax(axis=1)
+    # cm = confusion_matrix(y_true,y_pred)
+    # print(cm)
+    # print("Recall",recall_score(y_true,y_pred))
+    # print("f1",f1_score(y_true, y_pred))
+    # d = ConfusionMatrixDisplay(cm)
+    # d.plot()
+    # plt.show()
 
 if __name__ == "__main__":
     main()
