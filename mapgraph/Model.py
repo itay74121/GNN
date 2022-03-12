@@ -283,14 +283,29 @@ def hardmax(input):
     return r
 
 def main():
-    files = glob("./FS raw/*/*.pcap")
+    folders = glob("./FS raw/*")
     d = {}
-    for file in files:
-        pre = file.split(".pcap")[0]
-        if pre not in d:
-            d[pre] = [file]
-        else:
-            d[pre].append(file)
+    folders.remove("./FS raw\\w_hi_chrome")
+    folders.remove("./FS raw\\w_hi_ie")
+    for folder in folders:
+        d1 = {}
+        files = glob(folder+"/*.pcap")
+        for file in files:
+            pre = file.split(".pcap")[0]
+            if pre not in d1:
+                d1[pre] = [file]
+            else:
+                d1[pre].append(file)
+        df = pd.read_csv(folder+"/id.csv")
+        for i in d1:
+            df2 = df[df['fname'].str.contains(i.split("\\")[-1])].copy()
+            df2['fname'] = df2['fname'].apply(lambda x:folder+"/"+x)
+            gp = df2.groupby('label')
+            for group in gp.groups:
+                d[i+f"_{group}"] = list(gp.get_group(group)['fname'])
+
+
+
     # c = 1
     # for pre in d:
     #     print(c,pre,len(d[pre]))
@@ -342,9 +357,9 @@ def main():
     # data= []
     # ans = []
     c= 1
-    for i in keys:
-        if "d_hi_chrome" in i or "d_hi_safari" in i or "l_hi_chrome" in i:
-            del d[i]
+    # for i in keys:
+    #     if "d_hi_chrome" in i or "d_hi_safari" in i or "l_hi_chrome" in i:
+    #         del d[i]
     for pre in d:
         print(c)
         c+=1
