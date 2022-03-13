@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from SniFiltering import *
+# from SniFiltering import *
 from scapy.all import *
 from glob import glob
 from MapGraphBuild import build
@@ -202,39 +202,39 @@ def extract_features(node,packets):
     return features
 
 
-
-def pcaptocsv(pcapfile,nodescsv,edgescsv,names,id):
-    packets = rdpcap(pcapfile)
-    fpackets = filterpackets(names,packets)
-    d,nodes = build(3,fpackets)
-    nodefeatures = []
-    c = 1
-    for node in nodes:
-        nodefeatures.append([c,node]+extract_features(node[0],packets)+[id])
-        c+=1
-    outfeatures  = pd.DataFrame.from_dict(nodefeatures)
-    edges = []
-    c = 1
-    for edge in d:
-        edges.append([c,edge[0],edge[1],d[edge],id])
-        c+=1
-
-    outedges = pd.DataFrame.from_dict(edges)
-    if path.exists(nodescsv):
-        dfnodes = pd.read_csv(nodescsv)
-        dfnodes.append(outfeatures)
-    else:
-        dfnodes = outfeatures
-    if path.exists(edgescsv):
-        dfedges = pd.read_csv(edgescsv)
-        dfedges.append(outedges)
-    else:
-        dfedges = outedges
-    with open(nodescsv,'w') as f:
-        dfnodes.to_csv(f)
-    with open(edgescsv,'w') as f:
-        dfedges.to_csv(f)
-
+#
+# def pcaptocsv(pcapfile,nodescsv,edgescsv,names,id):
+#     packets = rdpcap(pcapfile)
+#     fpackets = filterpackets(names,packets)
+#     d,nodes = build(3,fpackets)
+#     nodefeatures = []
+#     c = 1
+#     for node in nodes:
+#         nodefeatures.append([c,node]+extract_features(node[0],packets)+[id])
+#         c+=1
+#     outfeatures  = pd.DataFrame.from_dict(nodefeatures)
+#     edges = []
+#     c = 1
+#     for edge in d:
+#         edges.append([c,edge[0],edge[1],d[edge],id])
+#         c+=1
+#
+#     outedges = pd.DataFrame.from_dict(edges)
+#     if path.exists(nodescsv):
+#         dfnodes = pd.read_csv(nodescsv)
+#         dfnodes.append(outfeatures)
+#     else:
+#         dfnodes = outfeatures
+#     if path.exists(edgescsv):
+#         dfedges = pd.read_csv(edgescsv)
+#         dfedges.append(outedges)
+#     else:
+#         dfedges = outedges
+#     with open(nodescsv,'w') as f:
+#         dfnodes.to_csv(f)
+#     with open(edgescsv,'w') as f:
+#         dfedges.to_csv(f)
+#
 
 def split(data,p,d):
     train = []
@@ -304,8 +304,8 @@ def main():
             for group in gp.groups:
                 d[i+f"_{group}"] = list(gp.get_group(group)['fname'])
 
-
-
+    old = glob("./FS raw/*/*.npy")
+    old = [i.split('.npy')[0] for i in old]
     # c = 1
     # for pre in d:
     #     print(c,pre,len(d[pre]))
@@ -361,6 +361,11 @@ def main():
     #     if "d_hi_chrome" in i or "d_hi_safari" in i or "l_hi_chrome" in i:
     #         del d[i]
     for pre in d:
+        if pre in old:
+            print('skipped',pre,c)
+            c+=1
+            continue
+
         print(c)
         c+=1
         print("started",pre)
@@ -396,7 +401,7 @@ def main():
         # data.append(tf.ragged.stack([D,A,X]).to_tensor())
         # ans.append(t)
 
-        del packets,edges,nodes,A,D,X
+        del packets,edges,nodes,A,D,X,t
     #
     #
     # data = tf.ragged.stack(data).to_tensor()
