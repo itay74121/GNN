@@ -7,7 +7,7 @@ import tensorflow.keras as tfk
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import keras.backend as K
-
+import glob
 
 
 class SgcLayer(tfk.layers.Layer):
@@ -84,19 +84,6 @@ def getSX(session):
     S = getS(len(session))
     SX = np.dot(S, X)
     del S, X
-    # X = np.array(session)
-    # A = calculate_A(session)
-    # I = np.identity(len(A[0]))
-    # A_t = sum_matrices(A, I)
-    # del I, A
-    # D_t = np.array(get_diagonal_degree(A_t))
-    # D_t = normalize_D_t(D_t)
-    # S_temp = np.dot(D_t, A_t)
-    # del A_t
-    # S = np.dot(S_temp, D_t)
-    # del D_t, S_temp
-    # SX = np.dot(S, X)
-    # del S, X
     return np.asarray(SX)
 
 
@@ -120,11 +107,11 @@ def calculate_A(session):
 
 
 def createGraphFromSession(pcapName):
-    file = rdpcap("data/w_hi_chrome/" + pcapName)
+    file = rdpcap(pcapName)
     l = []
     counter = 0
     for p in file:
-        if counter == 700:
+        if counter == 30:  # here change
             break
         counter += 1
         packet_proc = preprocessing(p)
@@ -159,7 +146,7 @@ def preprocessing(packet):
 
 
 def getTrainTestGraphs():
-    df = pd.read_csv("data/w_hi_chrome/id.csv")
+    df = pd.read_csv("data/FS zipped//id.csv")
     train_name, test_name, train_label, test_label = train_test_split(df["fname"],
                                                                       df["label"],
                                                                       test_size=0.20,
@@ -173,7 +160,6 @@ def getTrainTestGraphs():
         counter += 1
         # if g:
         GraphsForTrain.append(np.ndarray.tolist(g))
-
     LableForTrain = []
     for i in train_label:
         LableForTrain.append(int(i))
@@ -182,6 +168,7 @@ def getTrainTestGraphs():
     for name in test_name:
         g = createGraphFromSession(name)
         print(name)
+
         # if g:
         GraphsForTest.append(np.ndarray.tolist(g))
     for i in test_label:
@@ -189,9 +176,6 @@ def getTrainTestGraphs():
 
     return GraphsForTrain, list(LableForTrain), GraphsForTest, list(listOfLabelsForTest)  # the graphs is SX
 
-
-GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
-m = cgnn_model()
 
 def f1(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
@@ -243,57 +227,80 @@ def FN(y_true, y_pred):
     return fn
 
 
-m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
-          loss='categorical_crossentropy', metrics=['acc', f1, precision, recall, TP, TN, FP, FN])
+def main():
+    folders = glob.glob("./data/FS zipped/*")
+    for folder in folders:
+        files = glob.glob(folder + "/*.pcap")
+        old = glob.glob(folder + "/*.npy")
+        counter=0
+        for file in files:
+            print(counter/len(files))
+            counter+=1
+            if file in old:
+                print("skip file", file)
+                continue
+            print("started working on:", file)
+            m = createGraphFromSession(file)
+            print("saving matrix", file)
+            np.save(file, m)
 
-max_n = max([len(i) for i in GraphsForTrain])
-for g in GraphsForTrain:
-    zeros = [0] * 1500
-    for i in range(max_n - len(g)):
-        g.append(zeros)
+    # GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
+    # m = cgnn_model()
+    # m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    #           loss='categorical_crossentropy', metrics=['acc', f1, precision, recall, TP, TN, FP, FN])
+    #
+    # max_n = max([len(i) for i in GraphsForTrain])
+    # for g in GraphsForTrain:
+    #     zeros = [0] * 1500
+    #     for i in range(max_n - len(g)):
+    #         g.append(zeros)
+    #
+    # graph_to_train = tf.convert_to_tensor(GraphsForTrain, tf.float32)
+    # graph_to_train = tf.cast(graph_to_train, tf.float32)
+    #
+    # dict_label = {}
+    # counter = 0
+    # for item in set(LabelsForTrain):
+    #     dict_label[item] = counter
+    #     counter += 1
+    #
+    # list_of_lables = []
+    # for item in LabelsForTrain:
+    #     list_temp = [0] * 6
+    #     list_temp[dict_label[item]] = 1
+    #     list_of_lables.append(list_temp)
+    #
+    # label_graph_to_train = tf.convert_to_tensor(list_of_lables)
+    # callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
+    # m.fit(graph_to_train, np.reshape(label_graph_to_train, (1557, 1, 6)), epochs=10, callbacks=[callback],
+    #       batch_size=32)
+    # list_of_lables_test = []
+    # for item in LabelsForTest:
+    #     list_temp = [0] * 6
+    #     list_temp[dict_label[item]] = 1
+    #     list_of_lables_test.append(list_temp)
+    # max_n_Test = max([len(i) for i in GraphsForTest])
+    # for g in GraphsForTest:
+    #     zeros = [0] * 1500
+    #     for i in range(max_n_Test - len(g)):
+    #         g.append(zeros)
+    # graph_to_test = tf.convert_to_tensor(GraphsForTest, tf.float32)
+    # graph_to_test = tf.cast(graph_to_test, tf.float32)
+    #
+    # m.evaluate(graph_to_test, np.reshape(list_of_lables_test, (390, 1, 6)))
+    #
+    # a = np.array(m.predict(graph_to_test))
+    # idx = np.argmax(a, axis=-1)
+    # idx = idx.flatten()
+    # b = np.array(np.reshape(list_of_lables_test, (390, 1, 6)))
+    # _idx = np.argmax(b, axis=-1)
+    # _idx = _idx.flatten()
+    #
+    # result = tf.math.confusion_matrix(labels=_idx, predictions=idx,
+    #                                   num_classes=6)  # use one hot to convert to 1D to do confMatrix
+    #
+    # print(result)
 
-graph_to_train = tf.convert_to_tensor(GraphsForTrain, tf.float32)
-graph_to_train = tf.cast(graph_to_train, tf.float32)
 
-dict_label = {}
-counter = 0
-for item in set(LabelsForTrain):
-    dict_label[item] = counter
-    counter += 1
-
-list_of_lables = []
-for item in LabelsForTrain:
-    list_temp = [0] * 6
-    list_temp[dict_label[item]] = 1
-    list_of_lables.append(list_temp)
-
-label_graph_to_train = tf.convert_to_tensor(list_of_lables)
-callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
-m.fit(graph_to_train, np.reshape(label_graph_to_train, (2603, 1, 6)), epochs=400, callbacks=[callback], batch_size=32)
-
-list_of_lables_test = []
-for item in LabelsForTest:
-    list_temp = [0] * 6
-    list_temp[dict_label[item]] = 1
-    list_of_lables_test.append(list_temp)
-max_n_Test = max([len(i) for i in GraphsForTest])
-for g in GraphsForTest:
-    zeros = [0] * 1500
-    for i in range(max_n_Test - len(g)):
-        g.append(zeros)
-graph_to_test = tf.convert_to_tensor(GraphsForTest, tf.float32)
-graph_to_test = tf.cast(graph_to_test, tf.float32)
-
-m.evaluate(graph_to_test, np.reshape(list_of_lables_test, (651, 1, 6)))
-
-a = np.array(m.predict(graph_to_test))
-idx = np.argmax(a, axis=-1)
-idx = idx.flatten()
-b = np.array(np.reshape(list_of_lables_test, (651, 1, 6)))
-_idx = np.argmax(b, axis=-1)
-_idx = _idx.flatten()
-
-result = tf.math.confusion_matrix(labels=_idx, predictions=idx,
-                                  num_classes=6)  # use one hot to convert to 1D to do confMatrix
-
-print(result)
+if __name__ == "__main__":
+    main()
