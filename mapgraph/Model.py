@@ -288,11 +288,11 @@ def hardmax(input):
     return r
 
 def main():
-    folders = glob("./FSraw/*")
+    folders = glob("./filtered_raw_dataset_temu2016_first_10_min/*")
     d = {}
-    folders.remove("./FSraw/w_hi_chrome")
-    folders.remove("./FSraw/w_hi_ie")
     for folder in folders:
+        if 'py' in folder or 'csv' in folder:
+            continue
         d1 = {}
         files = glob(folder+"/*.pcap")
         for file in files:
@@ -312,7 +312,7 @@ def main():
             for group in gp.groups:
                 d[i+f"_{group}"] = list(gp.get_group(group)['fname'])
 
-    old = glob("./FSraw/*/*.npy")
+    old = glob("./filtered_raw_dataset_temu2016_first_10_min/*/*.npy")
     old = [i.split('.npy')[0] for i in old]
     # c = 1
     # for pre in d:
@@ -374,7 +374,7 @@ def main():
             c+=1
             continue
 
-        print(c)
+        print(c/len(d))
         c+=1
         print("started",pre)
         packets = []

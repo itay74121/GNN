@@ -68,7 +68,7 @@ def getS(n):
     if n == 1:
         return np.array(0)
     if n == 2:
-        return np.array((0, 1), (1, 0))
+        return np.array([(0, 1),(1, 0)])
     S = [[0 for x in range(n)] for y in range(n)]
     S[0][0], S[n - 1][n - 1] = 0.50000, 0.50000
     S[0][1], S[1][0], S[n - 2][n - 1], S[n - 1][n - 2] = 0.40825, 0.40825, 0.40825, 0.40825
@@ -107,11 +107,14 @@ def calculate_A(session):
 
 
 def createGraphFromSession(pcapName):
-    file = rdpcap(pcapName)
+    try:
+        file = rdpcap(pcapName)
+    except:
+        return None
     l = []
     counter = 0
     for p in file:
-        if counter == 30:  # here change
+        if counter == 100:  # here change
             break
         counter += 1
         packet_proc = preprocessing(p)
@@ -120,6 +123,9 @@ def createGraphFromSession(pcapName):
                 l.append(complete(packet_proc))
         # if len(l) < 4:
         #   return None
+    del file, packet_proc
+    if len(l) == 0:
+        return None
     return getSX(l)
 
 
@@ -228,21 +234,32 @@ def FN(y_true, y_pred):
 
 
 def main():
-    folders = glob.glob("./data/FS zipped/*")
+    folders = glob.glob("./filtered_raw_dataset_temu2016_first_10_min/*")
     for folder in folders:
+        if 'py' in folder or 'csv' in folder:
+            continue
         files = glob.glob(folder + "/*.pcap")
         old = glob.glob(folder + "/*.npy")
-        counter=0
+        old = [i[:len(i)-i[::-1].index('_')-1] for i in old]
+        try:
+            df = pd.read_csv(folder + "/id.csv")
+        except:
+            continue
+        counter = 0
         for file in files:
-            print(counter/len(files))
-            counter+=1
+            print(counter / len(files))
+            counter += 1
             if file in old:
                 print("skip file", file)
                 continue
+            label_line = df[df["fname"] == file.split("/")[-1]]
+            label = label_line["label"].values[0]
             print("started working on:", file)
             m = createGraphFromSession(file)
-            print("saving matrix", file)
-            np.save(file, m)
+            if m is not None:
+                print("saving matrix", file)
+                np.save(file + "_" + str(label), m)
+            del m
 
     # GraphsForTrain, LabelsForTrain, GraphsForTest, LabelsForTest = getTrainTestGraphs()
     # m = cgnn_model()
