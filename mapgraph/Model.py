@@ -17,12 +17,11 @@ from sklearn.metrics import *
 
 
 class GCN(tf.keras.layers.Layer):
-    def __init__(self,out,d) -> None:
+    def __init__(self,out) -> None:
         super().__init__()
         self.out = out
-        self.d = d
     def build(self,input_shape):
-        self.w = self.add_weight(name='weight',shape=(self.d, self.out),
+        self.w = self.add_weight(name='weight',shape=(input_shape[-1], self.out),
                                initializer='random_normal',
                                trainable=True)
     def call(self,inputs):
@@ -37,14 +36,13 @@ class SortPooling(tf.keras.layers.Layer):
         pass
 
 class MAPModel(tf.keras.Model):
-    def __init__(self,out,N) -> None:
+    def __init__(self,out) -> None:
         super().__init__()
-        self.N = N
         self.out = out
-        self.GCN1 = GCN(1024,64)
-        self.GCN2 = GCN(1024,1024)
-        self.GCN3 = GCN(1024,1024)
-        self.GCN4 = GCN(512,1024)
+        self.GCN1 = GCN(1024)
+        self.GCN2 = GCN(1024)
+        self.GCN3 = GCN(1024)
+        self.GCN4 = GCN(512)
         self.conv256 = tf.keras.layers.Conv1D(filters=256,kernel_size=1)
         self.maxpool = tf.keras.layers.MaxPool1D(pool_size=2)
         self.conv512 = tf.keras.layers.Conv1D(filters=512, kernel_size=1)
@@ -56,10 +54,13 @@ class MAPModel(tf.keras.Model):
         """
         inputs are D and A and Z
         """
+        # ans = []
+        # for i in range(inputs.shape[0]):
+        work =  inputs[0]
         s = inputs.shape[2]
-        D = tf.slice(inputs[0][0],[0,0],[s,s])
-        A = tf.slice(inputs[0][1],[0,0],[s,s])
-        X = tf.slice(inputs[0][2],[0,0],[s,64])
+        D = tf.slice(work[0],[0,0],[s,s])
+        A = tf.slice(work[1],[0,0],[s,s])
+        X = tf.slice(work[2],[0,0],[s,64])
         t = tf.matmul(tf.matmul(D,A),X)
         t = self.GCN1(t)
         t = tf.matmul(tf.matmul(D, A), t)
@@ -75,8 +76,9 @@ class MAPModel(tf.keras.Model):
         t = self.flatten(t)
         t = self.dense1024(t)
         t = self.drop25(t)
-
         t = self.dense8(t)
+        #     ans.append(t[0])
+        # ans = tf.stack(ans)
         return t
 
 
@@ -121,8 +123,8 @@ def extract_features(node,packets):
     b = df[df[2] != node][0]
     c = df[0]
     features[0] = len(df[df[2] == node])
-    features[1] = max(a)
-    features[2] = min(a)
+    features[1] = max(a) if len(a)>0 else 0
+    features[2] = min(a) if len(a)>0 else 0
     features[3] = np.mean(a)
     features[4] = robust.mad(a)
     features[5] = np.std(a)
@@ -288,32 +290,32 @@ def hardmax(input):
     return r
 
 def main():
-    folders = glob("./filtered_raw_dataset_temu2016_first_10_min/*")
-    d = {}
-    for folder in folders:
-        if 'py' in folder or 'csv' in folder:
-            continue
-        d1 = {}
-        files = glob(folder+"/*.pcap")
-        for file in files:
-            pre = file.split(".pcap")[0]
-            if pre not in d1:
-                d1[pre] = [file]
-            else:
-                d1[pre].append(file)
-        df = pd.read_csv(folder+"/id.csv")
-        for i in d1:
-            if 'data' in i and 'data2' not in i:
-                df2 = df[df['fname'].str.contains('data') & (~df['fname'].str.contains('data2'))].copy()
-            else:
-                df2 = df[df['fname'].str.contains(i.split("/")[-1])].copy()
-            df2['fname'] = df2['fname'].apply(lambda x:folder+"/"+x)
-            gp = df2.groupby('label')
-            for group in gp.groups:
-                d[i+f"_{group}"] = list(gp.get_group(group)['fname'])
-
-    old = glob("./filtered_raw_dataset_temu2016_first_10_min/*/*.npy")
-    old = [i.split('.npy')[0] for i in old]
+    # folders = glob("/home/edr/Downloads/MoreSpace/GNN/mapgraph/filtered_raw_dataset_temu2016_first_10_min/*")
+    # d = {}
+    # for folder in folders:
+    #     if 'py' in folder or 'csv' in folder:
+    #         continue
+    #     d1 = {}
+    #     files = glob(folder+"/*.pcap")
+    #     for file in files:
+    #         pre = file.split(".pcap")[0]
+    #         if pre not in d1:
+    #             d1[pre] = [file]
+    #         else:
+    #             d1[pre].append(file)
+    #     df = pd.read_csv(folder+"/id.csv")
+    #     for i in d1:
+    #         if 'data' in i.split('/')[-1] and 'data2' not in i.split('/')[-1]:
+    #             df2 = df[df['fname'].str.contains('data') & (~df['fname'].str.contains('data2'))].copy()
+    #         else:
+    #             df2 = df[df['fname'].str.contains(i.split("/")[-1])].copy()
+    #         df2['fname'] = df2['fname'].apply(lambda x:folder+"/"+x)
+    #         gp = df2.groupby('label')
+    #         for group in gp.groups:
+    #             d[i+f"_{int(group)}"] = list(gp.get_group(group)['fname'])
+    #
+    # old = glob("/home/edr/Downloads/MoreSpace/GNN/mapgraph/filtered_raw_dataset_temu2016_first_10_min/*/*.npy")
+    # old = [i.split('.npy')[0] for i in old]
     # c = 1
     # for pre in d:
     #     print(c,pre,len(d[pre]))
@@ -368,48 +370,48 @@ def main():
     # for i in keys:
     #     if "d_hi_chrome" in i or "d_hi_safari" in i or "l_hi_chrome" in i:
     #         del d[i]
-    for pre in d:
-        if pre in old:
-            print('skipped',pre,c)
-            c+=1
-            continue
-
-        print(c/len(d))
-        c+=1
-        print("started",pre)
-        packets = []
-        srcs = set([h.replace("-",'.') for h in [[j for j in i.split("_") if j.count("-") == 3][0] for i in d[pre]]])
-        for file in d[pre]:
-            print("read",file)
-            try:
-                ps = rdpcap(file)
-            except:
-                continue
-            for t in ps:
-                packets.append(t)
-            del ps
-        packets.sort(key=lambda x: x[0].time < x[1].time)
-        edges,nodes = build(3,packets,srcs)
-        A = getmatrix(list(nodes),edges)
-        D = getdegree(A)
-        X = []
-        for n in nodes:
-            X.append(extract_features(n[0],packets))
-            print("done feature",n)
-        X = np.array(X)
-        t = tf.ragged.stack([D, A, X]).to_tensor().numpy()
-        np.save(pre,t)
-        # letter = pre.split("\\")[1][0].lower()
-        # t = []
-        # for i in classes:
-        #     if i == letter:
-        #         t.append(1)
-        #     else:
-        #         t.append(0)
-        # data.append(tf.ragged.stack([D,A,X]).to_tensor())
-        # ans.append(t)
-
-        del packets,edges,nodes,A,D,X,t
+    # for pre in d:
+    #     if pre in old:
+    #         print('skipped',pre,c)
+    #         c+=1
+    #         continue
+    #
+    #     print(c/len(d))
+    #     c+=1
+    #     print("started",pre)
+    #     packets = []
+    #     srcs = set([h.replace("-",'.') for h in [[j for j in i.split("_") if j.count("-") == 3][0] for i in d[pre]]])
+    #     for file in d[pre]:
+    #         print("read",file)
+    #         try:
+    #             ps = rdpcap(file)
+    #         except:
+    #             continue
+    #         for t in ps:
+    #             packets.append(t)
+    #         del ps
+    #     packets.sort(key=lambda x: x[0].time < x[1].time)
+    #     edges,nodes = build(3,packets,srcs)
+    #     A = getmatrix(list(nodes),edges)
+    #     D = getdegree(A)
+    #     X = []
+    #     for n in nodes:
+    #         X.append(extract_features(n[0],packets))
+    #         print("done feature",n)
+    #     X = np.array(X)
+    #     t = tf.ragged.stack([D, A, X]).to_tensor().numpy()
+    #     np.save(pre,t)
+    #     # letter = pre.split("\\")[1][0].lower()
+    #     # t = []
+    #     # for i in classes:
+    #     #     if i == letter:
+    #     #         t.append(1)
+    #     #     else:
+    #     #         t.append(0)
+    #     # data.append(tf.ragged.stack([D,A,X]).to_tensor())
+    #     # ans.append(t)
+    #
+    #     del packets,edges,nodes,A,D,X,t
 
     #
     # data = tf.ragged.stack(data).to_tensor()
@@ -432,96 +434,97 @@ def main():
     # np.save("ans",ans.numpy())
 
     #
-    # files = glob("./FS raw/*/*.npy")
-    # classes = list(set([int(i.split("_")[-1].split('.npy')[0]) for i in files]))
-    # classes.sort()
-    # s = [sum(map(lambda x: 1 if str(i) in x else 0,files)) for i in classes]
-    # y = []
-    # data = []
-    # for file in files:
-    #     v = [0]*len(classes)
-    #     label = int(file.split("_")[-1].split('.npy')[0])
-    #     # if s[classes.index(label)]<21:
-    #     #     continue
-    #     data.append(np.load(file))
-    #     v[classes.index(label)] = 1
-    #     y.append(v)
-    #
-    # stats = [[i.index(1) for i in y].count(i) for i in range(17)]
-    # d = {}
-    # for i in range(17):
-    #     d[i] = stats[i]
-    #
-    #
-    # data = tf.ragged.constant(data).to_tensor().numpy()
-    # for row in data:
-    #     D = row[0]
-    #     for i in range(D.shape[0]):
-    #         t = D[i][i]
-    #         if t>0:
-    #             D[i][i] = 1/t
-    # td = {}
-    # for i in range(17):
-    #     v = [0]*17
-    #     v[i] = 1
-    #     if i == 16:
-    #         td[tuple(v)] = (0.2,0.3)
-    #     elif i == 15:
-    #         td[tuple(v)] = (0.5,1)
-    #     elif i == -5:
-    #         td[tuple(v)] = (0.5,1)
-    #     else:
-    #         td[tuple(v)] =(0.8,1)
-    #
-    # data_train, data_test, labels_train, labels_test = split_classes(data,y,td)   #train_test_split(data,y,stratify=y,test_size=0.1)
-    # print([sum([i[j] for i in labels_train]) / len(labels_train) for j in range(17)])
-    #
-    # t = []
-    # for i in range(len(data_train)):
-    #     t.append((data_train[i],labels_train[i]))
-    # shuffle(t)
-    # for i in range(len(data_train)):
-    #     data_train[i] = t[i][0]
-    #     labels_train[i] = t[i][1]
-    #
-    # data_train = tf.constant(data_train)
-    # labels_train = tf.constant(labels_train)
-    #
-    #
-    #
-    #
-    # data_test = tf.constant(data_test)
-    # labels_test = tf.constant(labels_test)
-    #
-    # # t = [sum([i[j] for i in y])/len(y) for j in range(2)]
-    # # d = {0:t[0],1:t[1]}
-    #
-    # # traindataset =  np.load("train_x.npy")
-    # # trainans = np.load("train_y.npy")
-    # # val_x = np.reshape(np.load("val_x.npy"),[1,3,28,64])
-    # # val_y = np.load("val_y.npy")
-    #
-    # model = MAPModel(len(classes),5)
-    # model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1.58e-5), loss=tf.keras.losses.CategoricalCrossentropy(),metrics = ['accuracy',"categorical_accuracy"])
-    # model.fit(x=data_train,y=labels_train,batch_size=1,epochs=10,class_weight=d)
-    # # model.save("mymodel")
-    # # model = tf.keras.models.load_model("mymodel")
-    # predictions = []
-    # for i in range(data_test.shape[0]):
-    #     predictions.append(hardmax(model.predict(tf.stack([data_test[i]]))[0]))
-    # y_true = labels_test.numpy().argmax(axis=1)
-    # y_pred = np.array(predictions).argmax(axis=1)
-    # cm = confusion_matrix(y_true,y_pred)
-    # # print(cm)
-    # # print("Recall",recall_score(y_true,y_pred),average='micro')
-    # # print("f1",f1_score(y_true, y_pred,average='micro'))
-    # t = np.zeros(cm.shape)
-    # for i in range(cm.shape[0]):
-    #     for j in range(cm.shape[0]):
-    #         t[i][j] = cm[i][j] / np.sum(cm[i])
-    # d = ConfusionMatrixDisplay(t)
-    # d.plot()
-    # plt.show()
+    files = glob("./filtered_raw_dataset_temu2016_first_10_min/*/*.npy")
+    classes = list(set([int(i.split("_")[-1].split('.npy')[0]) for i in files]))
+    classes.sort()
+    s = [sum(map(lambda x: 1 if str(i) in x else 0,files)) for i in classes]
+    y = []
+    data = []
+    for file in files:
+        v = [0]*len(classes)
+        label = int(file.split("_")[-1].split('.npy')[0])
+        # if s[classes.index(label)]<21:
+        #     continue
+        data.append(np.load(file))
+        v[classes.index(label)] = 1
+        y.append(v)
+
+    stats = [[i.index(1) for i in y].count(i) for i in range(len(classes))]
+    d = {}
+    for i in range(len(classes)):
+        d[i] = stats[i]
+
+
+    data = tf.ragged.constant(data).to_tensor().numpy()
+    for row in data:
+        D = row[0]
+        for i in range(D.shape[0]):
+            t = D[i][i]
+            if t>0:
+                D[i][i] = 1/t
+    td = {}
+    for i in range(len(classes)):
+        v = [0]*len(classes)
+        v[i] = 1
+        td[tuple(v)] = (0.2,1)
+        # if i == 16:
+        #     td[tuple(v)] = (0.2,0.3)
+        # elif i == 15:
+        #     td[tuple(v)] = (0.5,1)
+        # elif i == -5:
+        #     td[tuple(v)] = (0.5,1)
+        # else:
+        #     td[tuple(v)] =(0.8,1)
+
+    data_train, data_test, labels_train, labels_test = split_classes(data,y,td)   #train_test_split(data,y,stratify=y,test_size=0.1)
+    print([sum([i[j] for i in labels_train]) / len(labels_train) for j in range(len(classes))])
+
+    t = []
+    for i in range(len(data_train)):
+        t.append((data_train[i],labels_train[i]))
+    shuffle(t)
+    for i in range(len(data_train)):
+        data_train[i] = t[i][0]
+        labels_train[i] = t[i][1]
+
+    data_train = tf.constant(data_train)
+    labels_train = tf.constant(labels_train)
+
+
+
+
+    data_test = tf.constant(data_test)
+    labels_test = tf.constant(labels_test)
+
+    # t = [sum([i[j] for i in y])/len(y) for j in range(2)]
+    # d = {0:t[0],1:t[1]}
+
+    # traindataset =  np.load("train_x.npy")
+    # trainans = np.load("train_y.npy")
+    # val_x = np.reshape(np.load("val_x.npy"),[1,3,28,64])
+    # val_y = np.load("val_y.npy")
+
+    model = MAPModel(len(classes))
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5), loss='categorical_crossentropy',metrics = ["acc"])
+    model.fit(x=data_train,y=labels_train,batch_size=1,epochs=20,class_weight=d)
+    # model.save("mymodel")
+    # model = tf.keras.models.load_model("mymodel")
+    predictions = []
+    for i in range(data_test.shape[0]):
+        predictions.append(hardmax(model.predict(tf.stack([data_test[i]]))[0]))
+    y_true = labels_test.numpy().argmax(axis=1)
+    y_pred = np.array(predictions).argmax(axis=1)
+    cm = confusion_matrix(y_true,y_pred)
+    # print(cm)
+    # print("Recall",recall_score(y_true,y_pred),average='micro')
+    # print("f1",f1_score(y_true, y_pred,average='micro'))
+    t = np.zeros(cm.shape)
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[0]):
+            t[i][j] = cm[i][j] / np.sum(cm[i])
+    d = ConfusionMatrixDisplay(t)
+    d.plot()
+    plt.show()
 
 if __name__ == "__main__":
     main()
