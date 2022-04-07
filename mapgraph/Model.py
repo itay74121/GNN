@@ -56,7 +56,7 @@ class MAPModel(tf.keras.Model):
         """
         # ans = []
         # for i in range(inputs.shape[0]):
-        work =  inputs[0]
+        work = inputs[0]
         s = inputs.shape[2]
         D = tf.slice(work[0],[0,0],[s,s])
         A = tf.slice(work[1],[0,0],[s,s])
@@ -466,7 +466,7 @@ def main():
     for i in range(len(classes)):
         v = [0]*len(classes)
         v[i] = 1
-        td[tuple(v)] = (0.2,1)
+        td[tuple(v)] = (0.1,1)
         # if i == 16:
         #     td[tuple(v)] = (0.2,0.3)
         # elif i == 15:
@@ -505,7 +505,7 @@ def main():
     # val_y = np.load("val_y.npy")
 
     model = MAPModel(len(classes))
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5), loss='categorical_crossentropy',metrics = ["acc"])
+    model.compile(run_eagerly=True,optimizer=tf.keras.optimizers.Adam(learning_rate=1e-7), loss='categorical_crossentropy',metrics = ["acc"])
     model.fit(x=data_train,y=labels_train,batch_size=1,epochs=20,class_weight=d)
     # model.save("mymodel")
     # model = tf.keras.models.load_model("mymodel")
