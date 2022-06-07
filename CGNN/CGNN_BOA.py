@@ -233,12 +233,25 @@ def main():
         print("loading label: ", i)
         test.append(np.load(i))
     print("finished loading")
-    # convert to ragged tensor
-    train = tf.ragged.constant(train).to_tensor()
-    print("finished train ragged")
-    test = tf.ragged.constant(test).to_tensor()
-    print("finished test ragged")
-    # finished ragged
+    train_ = []
+    for i in train:
+        tf_m = tf.convert_to_tensor(i)
+        if tf_m.shape[0] == 100:
+            padding = tf.constant([[0, 100-tf_m.shape[0]], [0, 0]])
+            tf.pad(tf_m)
+        train_.append(tf_m)
+    train = tf.stack(train_)
+    print("finished train padding")
+
+    test_ = []
+    for i in test:
+        tf_m = tf.convert_to_tensor(i)
+        if tf_m.shape[0] == 100:
+            padding = tf.constant([[0, 100-tf_m.shape[0]], [0, 0]])
+            tf.pad(tf_m)
+        test_.append(tf_m)
+    test = tf.stack(test_)
+    print("finished test padding")
     callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10)
     m = cgnn_model()
     m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
