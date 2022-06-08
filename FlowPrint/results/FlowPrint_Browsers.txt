@@ -1,0 +1,13 @@
+                                                                                         precision    recall  f1-score   support
+
+  C:\Users\yoel2\Downloads\FlowPrint_DataSet\BrowserPcaps\PCAP\samsung_chrome_1000.pcap     0.6186    0.6527    0.6352      8284
+ C:\Users\yoel2\Downloads\FlowPrint_DataSet\BrowserPcaps\PCAP\samsung_firefox_1000.pcap     0.6992    0.6990    0.6991      8339
+C:\Users\yoel2\Downloads\FlowPrint_DataSet\BrowserPcaps\PCAP\samsung_internet_1000.pcap     0.6889    0.5524    0.6131      5543
+      C:\Users\yoel2\Downloads\FlowPrint_DataSet\BrowserPcaps\PCAP\samsung_uc_1000.pcap     0.8583    0.9291    0.8923      7797
+
+                                                                               accuracy                         0.7190     29963
+                                                                              macro avg     0.7162    0.7083    0.7099     29963
+                                                                           weighted avg     0.7164    0.7190    0.7158     29963
+
+
+149812

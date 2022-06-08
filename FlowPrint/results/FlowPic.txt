@@ -1,0 +1,20 @@
+                                                        precision    recall  f1-score   support
+
+        C:\Users\yoel2\Downloads\FlowPic\AIMchat2.pcap     0.0000    0.0000    0.0000         4
+         C:\Users\yoel2\Downloads\FlowPic\email1b.pcap     0.0479    0.0169    0.0250       473
+C:\Users\yoel2\Downloads\FlowPic\facebook_audio2a.pcap     0.7455    0.7069    0.7257        58
+      C:\Users\yoel2\Downloads\FlowPic\ftps_up_2b.pcap     0.0000    0.0000    0.0000        13
+ C:\Users\yoel2\Downloads\FlowPic\hangouts_audio4.pcap     0.9293    0.9659    0.9473      8778
+        C:\Users\yoel2\Downloads\FlowPic\scpDown5.pcap     0.0000    0.0000    0.0000         6
+      C:\Users\yoel2\Downloads\FlowPic\sftp_up_2a.pcap     1.0000    1.0000    1.0000         5
+    C:\Users\yoel2\Downloads\FlowPic\skype_chat1a.pcap     0.0221    0.0221    0.0221       542
+   C:\Users\yoel2\Downloads\FlowPic\skype_video1a.pcap     0.0000    0.0000    0.0000         7
+     C:\Users\yoel2\Downloads\FlowPic\torYoutube2.pcap     0.0000    0.0000    0.0000        10
+     C:\Users\yoel2\Downloads\FlowPic\vpn_vimeo_B.pcap     1.0000    0.7727    0.8718        22
+
+                                              accuracy                         0.8633      9918
+                                             macro avg     0.3404    0.3168    0.3265      9918
+                                          weighted avg     0.8331    0.8633    0.8475      9918
+
+
+49590
