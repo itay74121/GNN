@@ -1,8 +1,9 @@
 from BuildGraph import build
-from scapy.all import rdpcap 
+from scapy.all import * 
 import pandas as pd
-
-
+import numpy as np
+from statsmodels import robust
+from scipy.stats import skew,scoreatpercentile,kurtosis
 features = ['IP_port', 'complete_max', 'complete_min', 'complete_mean', 'complete_mad', 'complete_std', 'complete_var', 'complete_skew', 'complete_kurt', 'complete_pkt_num', 'complete_10per', 'complete_20per', 'complete_30per', 'complete_40per', 'complete_50per', 'complete_60per', 'complete_70per', 'complete_80per', 'complete_90per', 'out_max', 'out_min', 'out_mean', 'out_mad', 'out_std', 'out_var', 'out_skew', 'out_kurt', 'out_pkt_num', 'out_10per', 'out_20per', 'out_30per', 'out_40per', 'out_50per', 'out_60per', 'out_70per', 'out_80per', 'out_90per', 'in_max', 'in_min', 'in_mean', 'in_mad', 'in_std', 'in_var', 'in_skew', 'in_kurt', 'in_pkt_num', 'in_10per', 'in_20per', 'in_30per', 'in_40per', 'in_50per', 'in_60per', 'in_70per', 'in_80per', 'in_90per', 'protocol', 'flows_num', 'flow_length_mean', 'flow_pkt_num_mean', 'flow_duration_mean', 'ip1', 'ip2', 'ip3', 'ip4', 'graph_id']
 
 def extract_features(node,packets):
@@ -42,8 +43,8 @@ def extract_features(node,packets):
     features[16] = scoreatpercentile(a, 80)
     features[17] = scoreatpercentile(a, 90)
     features[18] = len(df[df[2] != node])
-    features[19] = max(b)
-    features[20] = min(b)
+    features[19] = max(b) if len(b)>0 else 0
+    features[20] = min(b) if len(b)>0 else 0
     features[21] = np.mean(b)
     features[22] = robust.mad(b)
     features[23] = np.std(b)
@@ -60,8 +61,8 @@ def extract_features(node,packets):
     features[34] = scoreatpercentile(b, 80)
     features[35] = scoreatpercentile(b, 90)
     features[36] = len(df)
-    features[37] = max(c)
-    features[38] = min(c)
+    features[37] = max(c) if len(c)>0 else 0
+    features[38] = min(c) if len(c)>0 else 0
     features[39] = np.mean(c)
     features[40] = robust.mad(c)
     features[41] = np.std(c)
@@ -104,7 +105,12 @@ def extract_features(node,packets):
     features[63] = t[3]
     return features[1:]
 
-
+def findsrc(packets):
+    d = {}
+    for i in packets:
+        d.setdefault(i[IP].src,0)
+        d[i[IP].src] += 1
+    return max(d,key=d.get)
 
 def pcap2csvs(pcap:str,timeinterval:int,srcs:tuple):
     '''
@@ -116,7 +122,8 @@ def pcap2csvs(pcap:str,timeinterval:int,srcs:tuple):
         second dataframe contains the edges.
     '''
     packets = [i for i in rdpcap(pcap)] # extract packets into list 
-    packets.sort(lambda x: x.time) # sort according to time.   NOT TAKING CHANCES
+    srcs = [findsrc(packets)]
+    packets.sort(key=lambda x: x.time) # sort according to time.   NOT TAKING CHANCES
     edges,nodes = build(timeinterval,packets,srcs)
     nodes = list(nodes)
     temp = []#pd.DataFrame(columns=['source','target','weight','id'])
@@ -136,7 +143,14 @@ def pcap2csvs(pcap:str,timeinterval:int,srcs:tuple):
 
 
 def pcaps2csvs(pcapslist,interval,srcslist):
-    return [pcap2csvs(pcapslist[i],interval,srcslist[i]) for i in range(len(pcapslist))]
+    l = []
+    for i in range(len(pcapslist)):
+        print(pcapslist[i])
+        t = pcap2csvs(pcapslist[i],interval,srcslist[i])
+        t[0].to_csv(pcapslist[i]+".features.csv")
+        t[1].to_csv(pcapslist[i]+".edges.csv")
+        l.append(t)
+    return l
 
 
 
