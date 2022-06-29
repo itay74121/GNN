@@ -6,18 +6,20 @@ from scapy.layers.dns import DNS
 import tensorflow as tf
 import tensorflow.keras as tfk
 import pandas as pd
+from random import shuffle
 from tensorflow.keras import activations
 from sklearn.model_selection import train_test_split
 import keras.backend as K
 import glob
 import sys
 numpy.set_printoptions(threshold=sys.maxsize)
-#import os
+import os
+import glob
 #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 class cgnn_model(tfk.Model):
-    def __init__(self, n_classes=79):
+    def __init__(self, n_classes=1):
         super(cgnn_model, self).__init__()
         self.sgc1 = SgcLayer(516, 1, 'relu')
         self.sgc2 = SgcLayer(256, 1, 'relu')
@@ -26,9 +28,14 @@ class cgnn_model(tfk.Model):
     def call(self, inputs):
         x = self.sgc1(inputs)
         x = self.sgc2(x)
-        x = tf.keras.layers.AveragePooling1D(strides=1, pool_size=(inputs.shape[1]))(x)
+        x = tf.keras.layers.Reshape((100,256,1),input_shape=(100,256))(x)
+        x = tf.keras.layers.AveragePooling2D(strides=(1,1), pool_size=(inputs.shape[1], 1))(x)
+        #print('after pooling',x.shape)
+        x = tf.keras.layers.Flatten()(x)
         x = self.dense(x)
+        #print('after dense',x.shape)
         x = tf.nn.softmax(x)
+        #print('after softmax',x.shape)
         return x
 
 
@@ -79,9 +86,9 @@ def getS(n):
     return S
 
 
-def complete(s, l=100):
+def complete(s, l=200):
     p = [i for i in s] + [0] * (l - len(s))
-    return p[:100]
+    return p[:200]
 
 
 def createGraphFromSession(pcapName): # return X features matrix
@@ -181,11 +188,36 @@ def FN(y_true, y_pred):
 
 
 def main():
- 
+    fs = glob.glob("./Mapp Graph\*_sessions\*\*.npy")
+    for f in fs:
+        os.remove(f)
 
-    # ====================================================================================
-    files_names = glob.glob("./Mapp Graph/*/*/*.npy")
+    counterLabel = 1
+    folders = glob.glob("./Mapp Graph/*_sessions/")
+    for folder in folders:
+        files = glob.glob(folder + "/*/*.pcap")
+        old = glob.glob(folder + "/*/*.npy")
+        old = [i[:len(i) - i[::-1].index('_') - 1] for i in old]
+        counter = 0
+        for file in files:
+            print(counter / len(files))
+            counter += 1
+            if file in old:
+                print("skip file", file)
+                continue
+            label = counterLabel
+            print("started working on:", file)
+            m = createGraphFromSession(file)
+            if m is not None:
+                print("saving matrix", file)
+                np.save(file + "_" + str(label), m)
+            del m
+        counterLabel += 1  
+    files_names =  glob.glob("./Mapp Graph\*_sessions\*\*.npy")
+    shuffle(files_names)
+    files_names = files_names
     labels = [int(i.split("pcap_")[1].split(".")[0]) for i in files_names]
+
     print("debug")
     train_name, test_name, train_label, test_label = train_test_split(files_names, labels, test_size=0.2, random_state=42, stratify = labels)
 
@@ -209,15 +241,24 @@ def main():
     # load the files
     train = []
     test = []
+    loadCounter = 0
     for i in train_name:
+        print(loadCounter/len(train_name))
+        loadCounter +=1
         print("loading file: ", i)
         train.append(np.load(i))
+    loadCounter = 0
     for i in test_name:
+        print(loadCounter/len(test_name))
+        loadCounter +=1
         print("loading label: ", i)
         test.append(np.load(i))
     print("finished loading")
     train_ = []
+    padCounter = 0
     for i in train:
+        print(padCounter/len(train))
+        padCounter +=1
         tf_m = tf.constant(i)
         if tf_m.shape[0] < 100:
             padding = tf.constant([[0, 100-tf_m.shape[0]], [0, 0]])
@@ -227,7 +268,10 @@ def main():
     print("finished train padding")
 
     test_ = []
+    padCounter = 0
     for i in test:
+        print(padCounter/len(test))
+        padCounter +=1
         tf_m = tf.constant(i)
         if tf_m.shape[0] < 100:
             padding = tf.constant([[0, 100-tf_m.shape[0]], [0, 0]])
@@ -235,11 +279,15 @@ def main():
         test_.append(tf_m)
     test = tf.stack(test_)
     print("finished test padding")
-    callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=1)
-    m = cgnn_model()
+    callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
+    m = cgnn_model(n_classes=len(classes))
     m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
               loss='categorical_crossentropy', metrics=['acc', f1, precision, recall, TP, TN, FP, FN])
-    m.fit(x=train, y=train_l, batch_size=32, epochs= 400, shuffle = True, callbacks=[callback])
+ 
+    with tf.device('/device:GPU:0'):
+
+        m.fit(x=train, y=train_l, batch_size=32, epochs= 200,verbose=1, shuffle = True, callbacks=[callback])
+
     # test:
     m.evaluate(test, test_l)
 
@@ -251,7 +299,7 @@ def main():
     _idx = _idx.flatten()
 
     result = tf.math.confusion_matrix(labels=_idx, predictions=idx,
-                                      num_classes=79)  # use one hot to convert to 1D to do confMatrix
+                                      num_classes=80)  # use one hot to convert to 1D to do confMatrix
     print(result)
 
 if __name__ == "__main__":
