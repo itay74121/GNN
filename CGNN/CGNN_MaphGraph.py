@@ -19,7 +19,7 @@ import glob
 
 
 class cgnn_model(tfk.Model):
-    def __init__(self, n_classes=1):
+    def __init__(self, n_classes=80):
         super(cgnn_model, self).__init__()
         self.sgc1 = SgcLayer(516, 1, 'relu')
         self.sgc2 = SgcLayer(256, 1, 'relu')
@@ -86,9 +86,9 @@ def getS(n):
     return S
 
 
-def complete(s, l=200):
+def complete(s, l=125):
     p = [i for i in s] + [0] * (l - len(s))
-    return p[:200]
+    return p[:125]
 
 
 def createGraphFromSession(pcapName): # return X features matrix
@@ -188,31 +188,6 @@ def FN(y_true, y_pred):
 
 
 def main():
-    fs = glob.glob("./Mapp Graph\*_sessions\*\*.npy")
-    for f in fs:
-        os.remove(f)
-
-    counterLabel = 1
-    folders = glob.glob("./Mapp Graph/*_sessions/")
-    for folder in folders:
-        files = glob.glob(folder + "/*/*.pcap")
-        old = glob.glob(folder + "/*/*.npy")
-        old = [i[:len(i) - i[::-1].index('_') - 1] for i in old]
-        counter = 0
-        for file in files:
-            print(counter / len(files))
-            counter += 1
-            if file in old:
-                print("skip file", file)
-                continue
-            label = counterLabel
-            print("started working on:", file)
-            m = createGraphFromSession(file)
-            if m is not None:
-                print("saving matrix", file)
-                np.save(file + "_" + str(label), m)
-            del m
-        counterLabel += 1  
     files_names =  glob.glob("./Mapp Graph\*_sessions\*\*.npy")
     shuffle(files_names)
     files_names = files_names
@@ -235,8 +210,9 @@ def main():
         v[classes.index(i)] = 1
         v[classes.index(i)] = 1
         test_l.append(v)
-    train_l = tf.expand_dims(tf.constant(train_l), axis=1)
-    test_l = tf.expand_dims(tf.constant(test_l), axis=1)
+    train_l = tf.constant(train_l) #tf.expand_dims(tf.constant(train_l), axis=0)
+    test_l = tf.constant(test_l) #tf.expand_dims(tf.constant(test_l), axis=0)
+    print(train_l.shape,test_l.shape)
     print("before load")
     # load the files
     train = []
@@ -281,7 +257,7 @@ def main():
     print("finished test padding")
     callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20)
     m = cgnn_model(n_classes=len(classes))
-    m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
               loss='categorical_crossentropy', metrics=['acc', f1, precision, recall, TP, TN, FP, FN])
  
     with tf.device('/device:GPU:0'):
