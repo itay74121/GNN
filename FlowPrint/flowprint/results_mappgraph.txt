@@ -1,0 +1,33 @@
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\facebook into 1987 train and 497 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\googlemeet into 1095 train and 274 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\instagram into 1578 train and 395 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\pubg into 5171 train and 1293 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\quora into 11644 train and 2911 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\reddit into 15548 train and 3887 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\sound into 4604 train and 1152 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\spotify into 2252 train and 564 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\tango into 6996 train and 1750 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\twitch into 3840 train and 960 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\vnexpress into 8618 train and 2155 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\wiki into 3737 train and 935 test flows
+Split C:\Users\yoel2\Downloads\MappGraph\PCAP\zoom into 902 train and 226 test flows
+
+                                                    precision    recall  f1-score   support
+
+  C:\Users\yoel2\Downloads\MappGraph\PCAP\facebook     0.8763    0.9980    0.9332       497
+C:\Users\yoel2\Downloads\MappGraph\PCAP\googlemeet     0.9152    0.9453    0.9300       274
+ C:\Users\yoel2\Downloads\MappGraph\PCAP\instagram     0.9179    0.9620    0.9394       395
+      C:\Users\yoel2\Downloads\MappGraph\PCAP\pubg     1.0000    1.0000    1.0000      1293
+     C:\Users\yoel2\Downloads\MappGraph\PCAP\quora     0.6742    0.7345    0.7031      2911
+    C:\Users\yoel2\Downloads\MappGraph\PCAP\reddit     0.7786    0.6524    0.7100      3887
+     C:\Users\yoel2\Downloads\MappGraph\PCAP\sound     0.9760    0.9896    0.9828      1152
+   C:\Users\yoel2\Downloads\MappGraph\PCAP\spotify     0.9558    0.9574    0.9566       564
+     C:\Users\yoel2\Downloads\MappGraph\PCAP\tango     1.0000    0.9989    0.9994      1750
+    C:\Users\yoel2\Downloads\MappGraph\PCAP\twitch     0.9937    0.9781    0.9858       960
+ C:\Users\yoel2\Downloads\MappGraph\PCAP\vnexpress     1.0000    1.0000    1.0000      2155
+      C:\Users\yoel2\Downloads\MappGraph\PCAP\wiki     0.7172    0.9358    0.8121       935
+      C:\Users\yoel2\Downloads\MappGraph\PCAP\zoom     0.9206    0.8717    0.8955       226
+
+                                          accuracy                         0.8645     16999
+                                         macro avg     0.9020    0.9249    0.9114     16999
+                                      weighted avg     0.8666    0.8645    0.8631     16999

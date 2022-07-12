@@ -1,0 +1,12 @@
+              precision    recall  f1-score   support
+
+       Linux     0.5552    0.3997    0.4647      1171
+         OSX     0.8095    0.7419    0.7743       527
+     Windows     0.7583    0.8744    0.8122      2429
+
+    accuracy                         0.7228      4127
+   macro avg     0.7077    0.6720    0.6837      4127
+weighted avg     0.7072    0.7228    0.7088      4127
+
+
+20633

@@ -1,0 +1,1 @@
+{"batch": 300, "window": 30, "correlation": 0.1, "similarity": 0.9, "threshold": 0.1, "fingerprints": [[{"certificates": [], "destinations": [], "n_flows": 0}, "C:\\Users\\yoel2\\Downloads\\flowpic_extracted_flows\\iscx_chat.raw\\aim_chat_3b-131.202.240.45-161-131.202.240.242-51434-udp-1430325811.152819-554-.pcap"]]}

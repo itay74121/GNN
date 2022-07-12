@@ -1,0 +1,20 @@
+                                                    precision    recall  f1-score   support
+
+  C:\Users\yoel2\Downloads\MappGraph\PCAP\facebook     0.7011    0.8714    0.7771       490
+C:\Users\yoel2\Downloads\MappGraph\PCAP\googlemeet     0.5933    0.6520    0.6213       273
+ C:\Users\yoel2\Downloads\MappGraph\PCAP\instagram     0.8408    0.7416    0.7881       356
+      C:\Users\yoel2\Downloads\MappGraph\PCAP\pubg     0.9977    0.9917    0.9947      1321
+     C:\Users\yoel2\Downloads\MappGraph\PCAP\quora     0.3924    0.8483    0.5366      2868
+    C:\Users\yoel2\Downloads\MappGraph\PCAP\reddit     0.4770    0.0375    0.0695      3871
+     C:\Users\yoel2\Downloads\MappGraph\PCAP\sound     0.9629    0.9671    0.9650      1154
+   C:\Users\yoel2\Downloads\MappGraph\PCAP\spotify     0.7734    0.9105    0.8364       581
+     C:\Users\yoel2\Downloads\MappGraph\PCAP\tango     0.9960    0.9745    0.9851      1803
+    C:\Users\yoel2\Downloads\MappGraph\PCAP\twitch     0.9837    0.7531    0.8531       960
+ C:\Users\yoel2\Downloads\MappGraph\PCAP\vnexpress     1.0000    0.9911    0.9955      2135
+      C:\Users\yoel2\Downloads\MappGraph\PCAP\wiki     0.6984    0.9122    0.7911       957
+      C:\Users\yoel2\Downloads\MappGraph\PCAP\zoom     0.6545    0.7124    0.6822       226
+
+                                          accuracy                         0.7080     16995
+                                         macro avg     0.7747    0.7972    0.7612     16995
+                                      weighted avg     0.7265    0.7080    0.6581     16995
+
