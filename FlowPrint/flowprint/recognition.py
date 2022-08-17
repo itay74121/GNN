@@ -10,26 +10,6 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
 
-def rename_files():
-    mypath = "C:/Users/yoel2/Downloads/filtered_raw_dataset_temu2016_first_10_min/Mixed/"
-    onlyfiles = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
-    for f in onlyfiles:
-        old_name = f
-        new_name = f[0:-24]
-        try:
-            os.rename(mypath + old_name, mypath + new_name)
-        except FileExistsError:
-            print("File already Exists")
-            print("Removing existing file")
-            # skip the below code
-            # if you don't' want to forcefully rename
-            os.remove(new_name)
-            # rename it
-            os.rename(old_name, new_name)
-            print('Done renaming a file')
-            print("finished")
-
-
 
 if __name__ == "__main__":
     # read_csv()
@@ -61,35 +41,11 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(verbose=True)
     # Process all files
 
-    sub_directories = [x[0] + "/" for x in os.walk(args.dir)]
-    sub_directories = sub_directories[1:len(sub_directories)]
     # Get file names
     files = args.files or [args.dir+x for x in os.listdir(args.dir)]
 
 
-# do not delete this - for the 400GB
-    # files = []
-    # labels = []
-    # for dir in sub_directories:
-    #     for x in os.listdir(dir):
-    #         # sessions
-    #         if dir[-8:len(dir)] != "sessions":
-    #             print(dir[-8:len(dir)])
-    #             files.append(dir + x)
-    #             labels.append(os.path.basename(os.path.normpath(dir)))
-
-    files = []
-    labels = []
-    data= pd.read_csv("C:/Users/yoel2/Downloads/filtered_raw_dataset_temu2016_first_10_min/file2labels.csv")
-    for i in range(0, len(data.filename)):
-        files.append(args.dir + data.filename[i])
-        labels.append(data.os[i] + " " + data.browser[i] + " " + data.domain[i])
-
-    # labels = files
-    # labels = []
-    # labels = list(([x.split("_")[0] for x in files]))
-    print(str(labels))
-    print()
+    labels = files
     X, y = preprocessor.process(files, labels)
 
     ########################################################################
